@@ -2,6 +2,102 @@
 
 namespace FourthPlanetDev;
 
+/*
+ * Objectified version of procedural methods below.
+ * */
+class PreciseBaseConvert {
+	public $scale;
+
+	protected $_number;
+	protected $_digits;
+
+	/**
+	 * Class constructor
+	 * @param Numeric $number
+	 * @param [optional] int $base - Defaults to 10.
+	 * @param [optional] int $scale - Defaults to ini_get('precision')
+	 * @param [optional] array $digits - Defaults to [0-9a-z]
+	 */
+	public function __construct($number,$base=10,$scale=null,array $digits=array()) {
+		if (is_null($scale)) {
+			$scale = ini_get('precision');
+		}
+
+		$this->scale = $scale;
+		if (empty($digits)) {
+			$this->resetDigits();
+		} else {
+			$this->setDigits($digits);
+		}
+
+		$this->setNumber($number,$base);
+
+	}
+
+	/**
+	 * Called when re/setting the base number we are working with from a non-base 10 perspective.
+	 * @param Numeric $number - The number we are working with
+	 * @param int $base - It's base.
+	 */
+	protected function _toBaseTen($number,$base) {
+		return precise_BaseToDecConversion($number,$base,$this->scale,$this->_digits);
+	}
+
+	/**
+	 * Do the conversion work.
+	 * @param int $base - The base to convert to
+	 * @throws \Exception
+	 */
+	public function toBase($base) {
+		if (count($this->_digits) < $base) {
+			throw new \Exception('Invalid base submitted.');
+		}
+
+		return precise_DecToBaseConversion($this->_number, $base, $this->scale, $this->_digits);
+	}
+
+	/**
+	 * Convert to multiple bases at once
+	 * @param array $bases
+	 */
+	public function toBases($bases) {
+		$ret = array();
+		foreach($bases as $base) {
+			$ret[$base] = $this->toBase($base);
+		}
+		return $ret;
+	}
+
+	/**
+	 * Sets the number to work with
+	 * @param Numeric $number
+	 * @param int $base - Defaults to 10
+	 */
+	public function setNumber($number,$base=10) {
+		if ($base == 10) {
+			// confirm is a valid number...
+			$this->_number = $number;
+		} else {
+			$this->_number = $this->_toBaseTen($number,$base);
+		}
+	}
+
+	/**
+	 * Call to reset digits that are used to [0-9a-z].  Supports up to base-36
+	 */
+	public function resetDigits() {
+		$this->setDigits(array_merge(range(0,9),range('a','z')));
+	}
+	/**
+	 * Call to update the digits that are used.
+	 * @param array $digits
+	 */
+	public function setDigits($digits) {
+		$this->_digits = array_values(array_unique($digits));
+	}
+}
+
+
 /**
  * Converts a given decimal number to any given base.
  *
