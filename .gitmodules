@@ -1,0 +1,3 @@
+[submodule "MathUtils"]
+	path = MathUtils
+	url = git://github.com/4thPlanet/MathUtils.git
